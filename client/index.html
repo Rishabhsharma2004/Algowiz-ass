@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #messages { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll; }
+        .message { margin-bottom: 10px; }
+        .duplicate { color: red; }
+        .aggregated { color: green; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <div id="messages"></div>
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+        const messagesDiv = document.getElementById('messages');
+
+        let receivedUpdates = new Set();
+
+        ws.onmessage = (event) => {
+            const update = JSON.parse(event.data);
+
+            // Filter duplicates
+            const updateKey = `${update.AppOrderID}-${update.price}-${update.triggerPrice}-${update.priceType}-${update.productType}-${update.status}-${update.exchange}-${update.symbol}`;
+            if (receivedUpdates.has(updateKey)) {
+                const duplicateMessage = document.createElement('div');
+                duplicateMessage.classList.add('message', 'duplicate');
+                duplicateMessage.textContent = `Filtered duplicate: ${event.data}`;
+                messagesDiv.appendChild(duplicateMessage);
+                return;
+            }
+            receivedUpdates.add(updateKey);
+
+            // Display the received update
+            const message = document.createElement('div');
+            message.classList.add('message');
+            message.textContent = `Received: ${event.data}`;
+            messagesDiv.appendChild(message);
+
+            // Auto-scroll to the latest message
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+    </script>
+</body>
+</html>
